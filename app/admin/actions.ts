@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from '@/lib/auth';
 import { q } from '@/lib/db';
 import { generateBracket, recomputeBracket } from '@/lib/bracket';
-import { getTeams, MIN_ROSTER, newRegCode, randomCode, removeFromTeam, setSetting } from '@/lib/data';
+import { getTeams, MIN_ROSTER, newRegCode, randomCode, removeFromTeam, setSetting, userPhotoUrl } from '@/lib/data';
 import { createBotPlayer, createBotTeam, randomScores } from '@/lib/sim';
 
 function back(kind: 'ok' | 'err', msg: string, hash = ''): never {
@@ -74,6 +74,43 @@ export async function saveMatch(fd: FormData) {
   back('ok', 'Partido actualizado.', '#partidos');
 }
 
+const IMG_RE = /^data:image\/(webp|png|jpeg);base64,[A-Za-z0-9+/=]+$/;
+
+export async function adminUploadTeamLogo(fd: FormData) {
+  await requireAdmin();
+  const id = Number(fd.get('team_id'));
+  const logo = String(fd.get('logo') ?? '');
+  if (!IMG_RE.test(logo)) back('err', 'Elige una imagen PNG, JPG o WEBP.', '#equipos');
+  if (logo.length > 400_000) back('err', 'La imagen es muy pesada. Prueba con otra más simple.', '#equipos');
+  await q('update teams set logo=$2, logo_v=logo_v+1 where id=$1', [id, logo]);
+  back('ok', 'Logo del equipo actualizado.', '#equipos');
+}
+
+export async function adminUploadPlayerPhoto(fd: FormData) {
+  await requireAdmin();
+  const id = String(fd.get('user_id') ?? '');
+  const photo = String(fd.get('photo') ?? '');
+  if (!IMG_RE.test(photo)) back('err', 'Elige una imagen PNG, JPG o WEBP.', '#jugadores');
+  if (photo.length > 400_000) back('err', 'La imagen es muy pesada. Prueba con otra más simple.', '#jugadores');
+  const [u] = await q('select id from users where id=$1', [id]);
+  if (!u) back('err', 'Ese jugador ya no existe.', '#jugadores');
+  await q(
+    'insert into user_photos (user_id, data) values ($1,$2) on conflict (user_id) do update set data = excluded.data',
+    [id, photo]
+  );
+  await q('update users set avatar=$2 where id=$1', [id, userPhotoUrl(id)]);
+  back('ok', 'Foto del jugador actualizada.', '#jugadores');
+}
+
+export async function adminRemovePlayerPhoto(fd: FormData) {
+  await requireAdmin();
+  const id = String(fd.get('user_id') ?? '');
+  await q('delete from user_photos where user_id=$1', [id]);
+  // Si entra con Discord, vuelve a aparecer su foto de Discord.
+  await q("update users set avatar=null where id=$1 and avatar like '/api/user-photo/%'", [id]);
+  back('ok', 'Foto quitada.', '#jugadores');
+}
+
 export async function adminRemoveTeamLogo(fd: FormData) {
   await requireAdmin();
   await q('update teams set logo=null, logo_v=logo_v+1 where id=$1', [Number(fd.get('team_id'))]);
@@ -103,6 +140,7 @@ export async function adminDeletePlayer(fd: FormData) {
   await requireAdmin();
   const id = String(fd.get('user_id') ?? '');
   await removeFromTeam(id);
+  await q('delete from user_photos where user_id=$1', [id]);
   await q('delete from users where id=$1', [id]);
   back('ok', 'Jugador eliminado. Si vuelve a entrar con Discord, empieza con un perfil nuevo.', '#jugadores');
 }
@@ -178,6 +216,7 @@ export async function simDeleteAll() {
     await q('update users set team_id=null where team_id=$1 and not is_bot', [t.id]);
     await q('update reg_codes set team_id=null, used_at=null where team_id=$1', [t.id]);
   }
+  await q('delete from user_photos where user_id in (select id from users where is_bot)');
   await q('delete from users where is_bot');
   await q('delete from teams where is_bot');
   // Equipos reales que quedaron sin jugadores (solo tenían bots) se mantienen; el capitán sigue igual.

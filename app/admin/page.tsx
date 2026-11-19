@@ -3,10 +3,11 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { roundName } from '@/lib/bracket';
 import { getAllUsers, getMatches, getRegCodes, getSettings, getTeams, MIN_ROSTER } from '@/lib/data';
-import { adminCreateTeam, adminEditTeam, simDeleteAll, simFillTeams, simFreeAgents, simRound, simTeams, adminDeletePlayer, adminRemoveFromTeam, adminRemoveTeamLogo, createRegCode, deleteRegCode, createBracket, deleteBracket, deleteTeam, saveMatch, saveSettings } from './actions';
+import { adminCreateTeam, adminEditTeam, simDeleteAll, simFillTeams, simFreeAgents, simRound, simTeams, adminDeletePlayer, adminRemoveFromTeam, adminRemoveTeamLogo, adminUploadTeamLogo, adminUploadPlayerPhoto, adminRemovePlayerPhoto, createRegCode, deleteRegCode, createBracket, deleteBracket, deleteTeam, saveMatch, saveSettings } from './actions';
 import ConfirmButton from '@/components/ConfirmButton';
 import Avatar from '@/components/Avatar';
 import TeamBadge from '@/components/TeamBadge';
+import LogoUploader from '@/components/LogoUploader';
 
 export const metadata = { title: 'Admin · Torneo de Valorant UdeC 5vs5' };
 
@@ -173,6 +174,12 @@ export default async function AdminPage({ searchParams }: { searchParams: { ok?:
                           <button className="btn sm">Guardar</button>
                         </form>
                       </details>
+                      <details className="edit-inline">
+                        <summary className="btn ghost sm">{t.has_logo ? 'Cambiar logo' : 'Subir logo'}</summary>
+                        <div className="edit-pop">
+                          <LogoUploader key={t.logo_v ?? 0} action={adminUploadTeamLogo} hidden={{ team_id: t.id }} />
+                        </div>
+                      </details>
                       {t.has_logo && (
                         <form action={adminRemoveTeamLogo}><input type="hidden" name="team_id" value={t.id} /><ConfirmButton className="btn ghost sm" message={`¿Quitar el logo de "${t.name}"?`}>Quitar logo</ConfirmButton></form>
                       )}
@@ -215,6 +222,18 @@ export default async function AdminPage({ searchParams }: { searchParams: { ok?:
                           <form action={adminRemoveFromTeam}>
                             <input type="hidden" name="user_id" value={u.id} />
                             <ConfirmButton className="btn ghost sm" message={`¿Quitar a ${u.name} de ${u.team_name}?`}>Quitar del equipo</ConfirmButton>
+                          </form>
+                        )}
+                        <details className="edit-inline">
+                          <summary className="btn ghost sm">{u.avatar?.startsWith('/api/user-photo/') ? 'Cambiar foto' : 'Subir foto'}</summary>
+                          <div className="edit-pop">
+                            <LogoUploader key={u.avatar ?? ''} action={adminUploadPlayerPhoto} field="photo" hidden={{ user_id: u.id }} saveLabel="Guardar foto" fit="cover" round />
+                          </div>
+                        </details>
+                        {u.avatar?.startsWith('/api/user-photo/') && (
+                          <form action={adminRemovePlayerPhoto}>
+                            <input type="hidden" name="user_id" value={u.id} />
+                            <ConfirmButton className="btn ghost sm" message={`¿Quitar la foto de ${u.name}?`}>Quitar foto</ConfirmButton>
                           </form>
                         )}
                         <form action={adminDeletePlayer}>

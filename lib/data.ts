@@ -45,10 +45,15 @@ export type Match = {
 };
 
 // ---------- Usuarios ----------
+// Si un admin le subió una foto, se usa esa aunque el jugador vuelva a entrar con Discord.
+export function userPhotoUrl(id: string) {
+  return `/api/user-photo/${encodeURIComponent(id)}?v=${Date.now()}`;
+}
 export async function upsertUser(id: string, name: string, avatar: string | null) {
   await q(
     `insert into users (id, name, avatar) values ($1,$2,$3)
-     on conflict (id) do update set name = excluded.name, avatar = excluded.avatar`,
+     on conflict (id) do update set name = excluded.name,
+       avatar = case when users.avatar like '/api/user-photo/%' then users.avatar else excluded.avatar end`,
     [id, name, avatar]
   );
 }

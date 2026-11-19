@@ -33,6 +33,10 @@ const SCHEMA = [
   `alter table teams add column if not exists is_bot boolean not null default false`,
   `alter table users add column if not exists is_bot boolean not null default false`,
   `alter table teams add column if not exists logo_v int not null default 0`,
+  `create table if not exists user_photos (
+    user_id text primary key,
+    data text not null
+  )`,
   `create table if not exists matches (
     id serial primary key,
     round int not null,
