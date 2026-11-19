@@ -1,0 +1,197 @@
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import Avatar from '@/components/Avatar';
+import { getCurrentUser } from '@/lib/auth';
+import { q } from '@/lib/db';
+import { formatWhen, getMatches, getTeams, getSettings, getTeam, getUser, upsertUser, MAX_ROSTER, MIN_ROSTER, RANKS, ROLES } from '@/lib/data';
+import { createTeam, joinTeam, kickMember, leaveTeam, newInviteCode, removeTeamLogo, updateProfile, uploadTeamLogo } from './actions';
+import TeamBadge from '@/components/TeamBadge';
+import LogoUploader from '@/components/LogoUploader';
+
+export const metadata = { title: 'Mi cuenta · Torneo de Valorant UdeC 5vs5' };
+
+export default async function CuentaPage({ searchParams }: { searchParams: { ok?: string; err?: string } }) {
+  const session = await getCurrentUser();
+  if (!session) redirect('/ingresar');
+  let [user, settings] = await Promise.all([getUser(session.id), getSettings()]);
+  if (!user) {
+    // Un admin borró este perfil: se crea uno nuevo automáticamente.
+    await upsertUser(session.id, session.name ?? 'Jugador', session.image ?? null);
+    user = await getUser(session.id);
+  }
+  if (!user) redirect('/ingresar');
+  const team = user.team_id ? await getTeam(user.team_id) : null;
+  const isCaptain = team?.captain_id === user.id;
+  const [{ n: bracketSize }] = await q('select count(*)::int as n from matches');
+  const closed = !settings.registration_open || bracketSize > 0;
+  // Próximo partido del equipo (si ya hay cuadro).
+  let next: { rival: string | null; when: string | null; bo: number; id: number } | null = null;
+  let eliminated = false;
+  if (team && bracketSize > 0) {
+    const [ms, all] = await Promise.all([getMatches(), getTeams()]);
+    const mine = ms.filter((m) => m.team1_id === team.id || m.team2_id === team.id);
+    eliminated = mine.some((m) => m.winner_id != null && m.team1_id && m.team2_id && m.winner_id !== team.id);
+    const m = mine.find((x) => x.winner_id == null);
+    if (m && !eliminated) {
+      const rivalId = m.team1_id === team.id ? m.team2_id : m.team1_id;
+      next = { id: m.id, rival: all.find((t) => t.id === rivalId)?.name ?? null, when: formatWhen(m.scheduled_at), bo: m.best_of };
+    }
+  }
+
+  return (
+    <div className="container" style={{ maxWidth: 900 }}>
+      <div className="page-head">
+        <div className="profile-head">
+          <Avatar src={user.avatar} name={user.name} size="lg" />
+          <div>
+            <div className="eyebrow">Mi cuenta</div>
+            <h1 className="title" style={{ fontSize: 44 }}>{user.name}</h1>
+            <Link className="link-more" href={`/jugadores/${encodeURIComponent(user.id)}`}>Ver mi perfil público →</Link>
+            <div className="small muted" style={{ marginTop: 6 }}>
+              Tu ID de Discord: <code style={{ color: 'var(--text)' }}>{user.id}</code>
+              {session.isAdmin ? <span className="tag ok" style={{ marginLeft: 8 }}>Admin</span> : null}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {searchParams.ok && <div className="alert ok">{searchParams.ok}</div>}
+      {searchParams.err && <div className="alert err">{searchParams.err}</div>}
+
+      {team && bracketSize > 0 && (
+        <section className="panel pad next-match">
+          <div className="eyebrow">Tu próximo partido</div>
+          {next ? (
+            <div className="next-row">
+              <div className="next-vs"><span>{team.name}</span><b>VS</b><span>{next.rival ?? 'Rival por definir'}</span></div>
+              <div className="next-meta">{next.when ?? 'Fecha por definir'} · <span className={`tag ${next.bo > 1 ? 'gold' : ''}`}>BO{next.bo}</span></div>
+            </div>
+          ) : eliminated ? (
+            <p className="muted" style={{ margin: '8px 0 0' }}>Tu equipo quedó eliminado. ¡Gracias por jugar!</p>
+          ) : (
+            <p style={{ margin: '8px 0 0', fontWeight: 700 }}>🏆 ¡Tu equipo no tiene partidos pendientes!</p>
+          )}
+          <Link className="link-more" href="/cuadro" style={{ display: 'inline-block', marginTop: 10 }}>Ver el cuadro →</Link>
+        </section>
+      )}
+
+      <section className="panel pad" style={team && bracketSize > 0 ? { marginTop: 16 } : undefined}>
+        <h2 className="section-title" style={{ fontSize: 22 }}>1 · Tu perfil de jugador</h2>
+        <p className="muted small" style={{ marginTop: 4 }}>El Riot ID es obligatorio para inscribirte en un equipo.</p>
+        <form action={updateProfile} style={{ marginTop: 16 }}>
+          <div className="form-row">
+            <div className="field">
+              <label htmlFor="riot_id">Riot ID</label>
+              <input className="input" id="riot_id" name="riot_id" placeholder="Nombre#TAG" defaultValue={user.riot_id ?? ''} />
+            </div>
+            <div className="field">
+              <label htmlFor="rank">Rango actual</label>
+              <select className="input" id="rank" name="rank" defaultValue={user.rank ?? ''}>
+                <option value="">Sin especificar</option>
+                {RANKS.map((r) => <option key={r}>{r}</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="role">Rol principal</label>
+              <select className="input" id="role" name="role" defaultValue={user.role ?? ''}>
+                <option value="">Sin especificar</option>
+                {ROLES.map((r) => <option key={r}>{r}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="form-actions"><button className="btn">Guardar perfil</button></div>
+        </form>
+      </section>
+
+      <section className="panel pad" style={{ marginTop: 16 }}>
+        <h2 className="section-title" style={{ fontSize: 22 }}>2 · Tu equipo</h2>
+        {team ? (
+          <>
+            <div className="team-top" style={{ marginTop: 16 }}>
+              <TeamBadge team={team} />
+              <div>
+                <Link href={`/equipos/${team.id}`} className="team-name-lg">{team.name}</Link>
+                <div className="small muted">
+                  {team.members.length}/{MAX_ROSTER} jugadores ·{' '}
+                  {team.members.length >= MIN_ROSTER ? <span style={{ color: 'var(--ok)' }}>equipo completo</span> : <span style={{ color: 'var(--gold)' }}>faltan {MIN_ROSTER - team.members.length} para completar</span>}
+                </div>
+              </div>
+            </div>
+
+            {isCaptain && (
+              <div style={{ marginTop: 20 }}>
+                <div className="field"><label>Logo del equipo</label></div>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginTop: 6 }}>
+                  <LogoUploader key={team.logo_v ?? 0} action={uploadTeamLogo} />
+                  {team.has_logo && <form action={removeTeamLogo}><button className="btn danger sm">Quitar logo</button></form>}
+                </div>
+                <p className="muted small" style={{ marginTop: 6 }}>Cuadrado y con fondo transparente se ve mejor. Se achica solo.</p>
+              </div>
+            )}
+
+            {isCaptain && (
+              <div style={{ marginTop: 20 }}>
+                <div className="field"><label>Código de invitación</label></div>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginTop: 6 }}>
+                  <span className="code-box">{team.invite_code}</span>
+                  <form action={newInviteCode}><button className="btn ghost sm">Generar otro código</button></form>
+                </div>
+                <p className="muted small">Tus compañeros entran con Discord, van a "Mi cuenta" y escriben este código.</p>
+              </div>
+            )}
+
+            <div className="panel" style={{ marginTop: 16, overflowX: 'auto' }}>
+              <table className="table">
+                <tbody>
+                  {team.members.map((m) => (
+                    <tr key={m.id}>
+                      <td>
+                        <div className="player-cell">
+                          <Avatar src={m.avatar} name={m.name} />
+                          <span>{m.name} {m.id === team.captain_id && <span className="tag gold" style={{ marginLeft: 6 }}>Capitán</span>}<div className="riot">{m.riot_id ?? 'Sin Riot ID'}</div></span>
+                        </div>
+                      </td>
+                      <td className="hide-sm">{m.role ?? '—'}</td>
+                      <td style={{ textAlign: 'right' }}>
+                        {isCaptain && m.id !== user.id && (
+                          <form action={kickMember}>
+                            <input type="hidden" name="user_id" value={m.id} />
+                            <button className="btn danger sm">Quitar</button>
+                          </form>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <form action={leaveTeam} className="form-actions">
+              <button className="btn danger">{isCaptain && team.members.length === 1 ? 'Eliminar equipo' : 'Salir del equipo'}</button>
+            </form>
+          </>
+        ) : closed ? (
+          <p className="muted">Las inscripciones están cerradas{bracketSize > 0 ? ' y el cuadro ya fue publicado' : ''}. Tu perfil igual aparece en la lista de jugadores.</p>
+        ) : (
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', marginTop: 16 }}>
+            <form action={createTeam} className="panel pad">
+              <h3 style={{ fontSize: 17 }}>Crear un equipo</h3>
+              <p className="muted small" style={{ margin: '4px 0 14px' }}>
+                Necesitas el <b style={{ color: 'var(--text)' }}>código de inscripción</b> que te entregamos al pagar la inscripción. <Link href="/inscripcion" style={{ color: 'var(--text)', textDecoration: 'underline' }}>¿Cómo lo consigo?</Link>
+              </p>
+              <div className="field" style={{ marginBottom: 12 }}><label htmlFor="reg_code">Código de inscripción</label><input className="input" id="reg_code" name="reg_code" maxLength={12} placeholder="XXXX-XXXX" required style={{ textTransform: 'uppercase', letterSpacing: 2, fontFamily: 'monospace' }} /></div>
+              <div className="field"><label htmlFor="name">Nombre del equipo</label><input className="input" id="name" name="name" maxLength={30} required /></div>
+              <div className="field" style={{ marginTop: 12 }}><label htmlFor="tag">Tag (2–5 letras)</label><input className="input" id="tag" name="tag" maxLength={5} placeholder="UDC" required style={{ textTransform: 'uppercase' }} /></div>
+              <div className="form-actions"><button className="btn">Crear equipo</button></div>
+            </form>
+            <form action={joinTeam} className="panel pad">
+              <h3 style={{ fontSize: 17 }}>Unirme a un equipo</h3>
+              <p className="muted small" style={{ margin: '4px 0 14px' }}>Pídele a tu capitán el código del equipo (6 caracteres). </p>
+              <div className="field"><label htmlFor="code">Código del equipo</label><input className="input" id="code" name="code" maxLength={12} placeholder="ABC123" required style={{ textTransform: 'uppercase', letterSpacing: 3 }} /></div>
+              <div className="form-actions"><button className="btn">Unirme</button></div>
+            </form>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
