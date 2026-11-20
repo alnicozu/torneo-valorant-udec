@@ -6,7 +6,7 @@ export const REGLAMENTO: { id: string; title: string; items: string[] }[] = [
     items: [
       'El valor de la inscripción es de $7.500 por equipo. El cupo se confirma una vez realizado el pago.',
       'El torneo está abierto para jugadores de todo Chile.',
-      'Las inscripciones están abiertas hasta el viernes 20 de noviembre a las 23:59. El torneo se juega el 21 y 22 de noviembre.',
+      'Las inscripciones están abiertas hasta el sábado 21 de noviembre a las 23:59. El torneo se juega el domingo 22 de noviembre.',
       'Cada jugador debe entrar a la página con su cuenta de Discord y completar su Riot ID.',
       'Los equipos son de 5 jugadores titulares y pueden tener hasta 2 suplentes (máximo 7).',
       'Al inscribirse, el capitán recibe un código de inscripción para crear el equipo en la página. Cada código sirve para un solo equipo.',

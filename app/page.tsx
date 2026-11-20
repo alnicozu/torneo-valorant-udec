@@ -28,7 +28,7 @@ export default async function Home() {
         <div className="container hero-inner">
           <span className="hero-kicker">
             {settings.registration_open ? <><b>●</b> Inscripciones abiertas</> : <>Inscripciones cerradas</>}
-            <span style={{ opacity: .4 }}>|</span> <b style={{ color: 'var(--gold)' }}>$7.500 por equipo</b> <span style={{ opacity: .4 }}>|</span> 21 y 22 de noviembre
+            <span style={{ opacity: .4 }}>|</span> <b style={{ color: 'var(--gold)' }}>$7.500 por equipo</b> <span style={{ opacity: .4 }}>|</span> Domingo 22 de noviembre
           </span>
           <img className="hero-logo" src="/logo.png" alt="Logo Torneo de Valorant UdeC 5vs5" />
           <h1>
