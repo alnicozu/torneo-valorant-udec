@@ -36,7 +36,7 @@ export default async function Home() {
             <br />
             <span className="y">UdeC</span> 5 vs 5
           </h1>
-          <p className="lead"><b style={{ color: 'var(--text)' }}>Demuestra tu nivel · Compite · Gana.</b> Arma tu equipo de cinco y pelea por los premios. Semifinales y final al mejor de 3.</p>
+          <p className="lead"><b style={{ color: 'var(--text)' }}>Demuestra tu nivel · Compite · Gana.</b> Arma tu equipo de cinco y pelea por los premios. Semifinales y final al mejor de 3. Mínimo 2 equipos: si solo hay 2, se juega directo la final al mejor de 3.</p>
           <FreeBanner />
           <div className="hero-cta">
             <Link className="btn lg" href="/inscripcion">¡Inscríbete ya!</Link>

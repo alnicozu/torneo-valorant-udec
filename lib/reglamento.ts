@@ -21,6 +21,7 @@ export const REGLAMENTO: { id: string; title: string; items: string[] }[] = [
       'Eliminación directa: el equipo que pierde queda fuera del torneo.',
       'Todas las rondas se juegan al mejor de 1 (BO1), excepto semifinales y final, que se juegan al mejor de 3 (BO3).',
       'Los cruces se sortean al momento de publicar el cuadro.',
+      'Para que el torneo se juegue se necesitan como mínimo 2 equipos inscritos. Si solo hay 2 equipos, se juega directamente la final al mejor de 3 (BO3).',
     ],
   },
   {
