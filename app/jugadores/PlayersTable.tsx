@@ -1,9 +1,23 @@
 'use client';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import Avatar from '@/components/Avatar';
 
 const ROLES = ['Duelista', 'Iniciador', 'Controlador', 'Centinela', 'Flex'];
+
+/** Las fotos de Discord vienen en 128 px por defecto; pedimos una más grande para la tarjeta. */
+function bigAvatar(src: string) {
+  if (/^https:\/\/cdn\.discordapp\.com\/avatars\//.test(src)) return src.replace(/\?.*$/, '') + '?size=512';
+  return src;
+}
+function initials(name: string) {
+  return (name || '').replace(/[^\p{L}\p{N}]/gu, '').slice(0, 2) || '?';
+}
+
+function PlayerPhoto({ src, name }: { src?: string | null; name: string }) {
+  const [broken, setBroken] = useState(false);
+  if (!src || broken) return <span className="initials">{initials(name)}</span>;
+  return <img src={bigAvatar(src)} alt="" loading="lazy" onError={() => setBroken(true)} />;
+}
 
 export default function PlayersTable({ players }: { players: any[] }) {
   const [text, setText] = useState('');
@@ -29,31 +43,29 @@ export default function PlayersTable({ players }: { players: any[] }) {
       {list.length === 0 ? (
         <div className="empty">No hay jugadores que coincidan.</div>
       ) : (
-        <div className="panel" style={{ overflowX: 'auto' }}>
-          <table className="table">
-            <thead>
-              <tr><th>Jugador (usuario de Discord vinculado)</th><th>Equipo</th><th className="hide-sm">Rol</th><th className="hide-sm">Rango</th></tr>
-            </thead>
-            <tbody>
-              {list.map((p) => (
-                <tr key={p.id} className="click">
-                  <td>
-                    <Link href={`/jugadores/${encodeURIComponent(p.id)}`} className="player-cell">
-                      <Avatar src={p.avatar} name={p.name} />
-                      <span>{p.name}<div className="riot">{p.riot_id ?? 'Sin Riot ID'}</div></span>
-                    </Link>
-                  </td>
-                  <td>
-                    {p.team_id ? (
-                      <Link href={`/equipos/${p.team_id}`}><span className="tag violet" style={{ marginRight: 8 }}>{p.team_tag}</span><span className="hide-sm">{p.team_name}</span></Link>
-                    ) : <span className="muted">Agente libre</span>}
-                  </td>
-                  <td className="hide-sm">{p.role ?? <span className="muted">—</span>}</td>
-                  <td className="hide-sm">{p.rank ?? <span className="muted">—</span>}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="player-grid">
+          {list.map((p) => (
+            <Link key={p.id} href={`/jugadores/${encodeURIComponent(p.id)}`} className="pcard">
+              <div className="pcard-photo">
+                <PlayerPhoto src={p.avatar} name={p.name} />
+                <div className="pcard-team">
+                  {p.team_id ? (
+                    <><span className="tag violet">{p.team_tag}</span><span className="tn">{p.team_name}</span></>
+                  ) : <span className="tag">Agente libre</span>}
+                </div>
+              </div>
+              <div className="pcard-body">
+                <div className="pcard-name" title={p.name}>{p.name}</div>
+                <div className="pcard-riot" title={p.riot_id ?? ''}>{p.riot_id ?? 'Sin Riot ID'}</div>
+                {(p.role || p.rank) && (
+                  <div className="pcard-meta">
+                    {p.role && <span className="tag">{p.role}</span>}
+                    {p.rank && <span className="tag gold">{p.rank}</span>}
+                  </div>
+                )}
+              </div>
+            </Link>
+          ))}
         </div>
       )}
     </>

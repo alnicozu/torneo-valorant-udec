@@ -10,7 +10,7 @@ export default async function JugadoresPage() {
       <div className="page-head">
         <div className="eyebrow">{players.length} registrados</div>
         <h1 className="title">Jugadores</h1>
-        <p className="subtitle">Todos los jugadores inscritos, con su rol, rango y equipo.</p>
+        <p className="subtitle">Todos los jugadores inscritos: su usuario de Discord vinculado, Riot ID, rol, rango y equipo.</p>
       </div>
       <PlayersTable players={players} />
     </div>
