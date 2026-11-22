@@ -71,10 +71,11 @@ export default async function Home() {
         <div className="section" id="sobre-el-torneo">
           <div className="section-head">
             <h2 className="section-title">Sobre el torneo</h2>
+            <Link className="link-more" href="/reglamento">Leer reglamento →</Link>
           </div>
+          <p className="muted" style={{ marginTop: -6, marginBottom: 14 }}>El formato explicado en menos de 2 minutos: equipos, eliminación directa, partidas al mejor de 1 y de 3, el cuadro y los premios.</p>
           <div className="panel video-wrap">
-            {/* #t=0.1 hace que el navegador muestre el primer cuadro como portada */}
-            <video src="/video/sobre-el-torneo.mp4#t=0.1" controls playsInline preload="metadata">
+            <video src="/video/sobre-el-torneo.mp4" poster="/video/sobre-el-torneo-poster.jpg" controls playsInline preload="none">
               Tu navegador no puede reproducir este video.
             </video>
           </div>
