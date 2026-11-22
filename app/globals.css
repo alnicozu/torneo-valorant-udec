@@ -527,3 +527,16 @@ textarea.input { resize: vertical; font-family: inherit; }
   .profile-head .team-logo.xl, .profile-head .team-badge.xl { width: 112px; height: 112px; }
   .tcard-tag { font-size: 48px; }
 }
+
+/* Auspiciadores (portada) */
+.sponsors { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); }
+.sponsor { display: flex; gap: 22px; align-items: center; padding: 20px; }
+.sponsor-logo { width: 160px; height: 160px; flex: none; border-radius: 12px; object-fit: cover; border: 1px solid rgba(255, 207, 63, .45); box-shadow: 0 12px 26px rgba(0, 0, 0, .35); }
+.sponsor-kicker { color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
+.sponsor-name { font-family: var(--display); font-size: 34px; line-height: 1.05; text-transform: uppercase; color: var(--gold); margin-top: 6px; }
+.sponsor-desc { color: var(--muted); margin-top: 6px; }
+.sponsor-amount { display: inline-block; margin-top: 14px; padding: 7px 14px; background: #e9d49a; color: #12131f; font-weight: 800; font-size: 14px; letter-spacing: .5px; text-transform: uppercase; clip-path: var(--cut); }
+@media (max-width: 520px) {
+  .sponsor { flex-direction: column; text-align: center; }
+  .sponsor-logo { width: 180px; height: 180px; }
+}

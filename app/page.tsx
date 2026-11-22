@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { AUSPICIADORES } from '@/lib/auspiciadores';
 import { getMatches, getSettings, getTeams } from '@/lib/data';
 import MatchRow from '@/components/MatchRow';
 import ContactCTA from '@/components/ContactCTA';
@@ -80,6 +81,34 @@ export default async function Home() {
             </video>
           </div>
         </div>
+
+        {AUSPICIADORES.length > 0 && (
+          <div className="section" id="auspiciadores">
+            <div className="section-head">
+              <h2 className="section-title">{AUSPICIADORES.length === 1 ? 'Auspiciador' : 'Auspiciadores'}</h2>
+            </div>
+            <div className="sponsors">
+              {AUSPICIADORES.map((a) => {
+                const inner = (
+                  <>
+                    <img className="sponsor-logo" src={a.logo} alt={`Logo de ${a.nombre}`} loading="lazy" />
+                    <div style={{ minWidth: 0 }}>
+                      <div className="sponsor-kicker">Auspiciador oficial</div>
+                      <div className="sponsor-name">{a.nombre}</div>
+                      <div className="sponsor-desc">{a.descripcion}</div>
+                      {a.aporte && <div className="sponsor-amount">{a.aporte}</div>}
+                    </div>
+                  </>
+                );
+                return a.url ? (
+                  <a key={a.nombre} className="panel sponsor" href={a.url} target="_blank" rel="noopener noreferrer">{inner}</a>
+                ) : (
+                  <div key={a.nombre} className="panel sponsor">{inner}</div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="section" id="inscribete">
           <div className="section-head">
