@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { roundName } from '@/lib/bracket';
 import { getAllUsers, getMatches, getRegCodes, getSettings, getTeams, MIN_ROSTER } from '@/lib/data';
-import { adminCreateTeam, adminEditTeam, simDeleteAll, simFillTeams, simFreeAgents, simRound, simTeams, adminDeletePlayer, adminRemoveFromTeam, adminRemoveTeamLogo, adminUploadTeamLogo, adminUploadPlayerPhoto, adminRemovePlayerPhoto, adminDeleteAllTeams, adminDeleteAllPlayers, createRegCode, deleteRegCode, createBracket, deleteBracket, deleteTeam, saveMatch, saveSettings } from './actions';
+import { adminCreateTeam, simDeleteAll, simFillTeams, simFreeAgents, simRound, simTeams, adminDeletePlayer, adminRemoveFromTeam, adminRemoveTeamLogo, adminUploadTeamLogo, adminUploadPlayerPhoto, adminRemovePlayerPhoto, adminDeleteAllTeams, adminDeleteAllPlayers, createRegCode, deleteRegCode, createBracket, deleteBracket, deleteTeam, saveMatch, saveSettings } from './actions';
 import ConfirmButton from '@/components/ConfirmButton';
 import Avatar from '@/components/Avatar';
 import TeamBadge from '@/components/TeamBadge';
@@ -172,15 +172,7 @@ export default async function AdminPage({ searchParams }: { searchParams: { ok?:
                     <td className="hide-sm" style={{ fontFamily: 'monospace' }}>{t.invite_code}</td>
                     <td style={{ textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                      <details className="edit-inline">
-                        <summary className="btn ghost sm">Editar</summary>
-                        <form action={adminEditTeam} className="edit-pop">
-                          <input type="hidden" name="team_id" value={t.id} />
-                          <input className="input" name="name" defaultValue={t.name} maxLength={30} aria-label="Nombre" />
-                          <input className="input" name="tag" defaultValue={t.tag} maxLength={5} aria-label="Tag" style={{ width: 90, textTransform: 'uppercase' }} />
-                          <button className="btn sm">Guardar</button>
-                        </form>
-                      </details>
+                      <Link className="btn ghost sm" href={`/admin/equipo/${t.id}`}>Editar</Link>
                       <details className="edit-inline">
                         <summary className="btn ghost sm">{t.has_logo ? 'Cambiar logo' : 'Subir logo'}</summary>
                         <div className="edit-pop">
@@ -232,6 +224,7 @@ export default async function AdminPage({ searchParams }: { searchParams: { ok?:
                     <td className="hide-sm" style={{ fontFamily: 'monospace', fontSize: 12 }}>{u.id}</td>
                     <td>
                       <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                        <Link className="btn ghost sm" href={`/admin/jugador/${encodeURIComponent(u.id)}`}>Editar</Link>
                         {u.team_id && (
                           <form action={adminRemoveFromTeam}>
                             <input type="hidden" name="user_id" value={u.id} />

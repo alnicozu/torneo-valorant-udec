@@ -4,12 +4,21 @@ import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from '@/lib/auth';
 import { q } from '@/lib/db';
 import { generateBracket, recomputeBracket } from '@/lib/bracket';
-import { getTeams, MIN_ROSTER, newRegCode, randomCode, removeFromTeam, setSetting, userPhotoUrl } from '@/lib/data';
+import { getTeams, MAX_ROSTER, MIN_ROSTER, newRegCode, randomCode, RANKS, removeFromTeam, ROLES, setSetting, userPhotoUrl } from '@/lib/data';
 import { createBotPlayer, createBotTeam, randomScores } from '@/lib/sim';
 
 function back(kind: 'ok' | 'err', msg: string, hash = ''): never {
   revalidatePath('/', 'layout');
   redirect(`/admin?${kind}=${encodeURIComponent(msg)}${hash}`);
+}
+/** Vuelve a la página de edición si el formulario vino de ahí; si no, al panel. */
+function done(fd: FormData, kind: 'ok' | 'err', msg: string, hash = ''): never {
+  const rt = String(fd.get('return_to') ?? '');
+  if (/^\/admin\/(jugador|equipo)\/[A-Za-z0-9_-]+$/.test(rt)) {
+    revalidatePath('/', 'layout');
+    redirect(`${rt}?${kind}=${encodeURIComponent(msg)}`);
+  }
+  back(kind, msg, hash);
 }
 async function requireAdmin() {
   const u = await getCurrentUser();
@@ -80,18 +89,18 @@ export async function adminUploadTeamLogo(fd: FormData) {
   await requireAdmin();
   const id = Number(fd.get('team_id'));
   const logo = String(fd.get('logo') ?? '');
-  if (!IMG_RE.test(logo)) back('err', 'Elige una imagen PNG, JPG o WEBP.', '#equipos');
-  if (logo.length > 400_000) back('err', 'La imagen es muy pesada. Prueba con otra más simple.', '#equipos');
+  if (!IMG_RE.test(logo)) done(fd, 'err', 'Elige una imagen PNG, JPG o WEBP.', '#equipos');
+  if (logo.length > 400_000) done(fd, 'err', 'La imagen es muy pesada. Prueba con otra más simple.', '#equipos');
   await q('update teams set logo=$2, logo_v=logo_v+1 where id=$1', [id, logo]);
-  back('ok', 'Logo del equipo actualizado.', '#equipos');
+  done(fd, 'ok', 'Logo del equipo actualizado.', '#equipos');
 }
 
 export async function adminUploadPlayerPhoto(fd: FormData) {
   await requireAdmin();
   const id = String(fd.get('user_id') ?? '');
   const photo = String(fd.get('photo') ?? '');
-  if (!IMG_RE.test(photo)) back('err', 'Elige una imagen PNG, JPG o WEBP.', '#jugadores');
-  if (photo.length > 400_000) back('err', 'La imagen es muy pesada. Prueba con otra más simple.', '#jugadores');
+  if (!IMG_RE.test(photo)) done(fd, 'err', 'Elige una imagen PNG, JPG o WEBP.', '#jugadores');
+  if (photo.length > 400_000) done(fd, 'err', 'La imagen es muy pesada. Prueba con otra más simple.', '#jugadores');
   const [u] = await q('select id from users where id=$1', [id]);
   if (!u) back('err', 'Ese jugador ya no existe.', '#jugadores');
   await q(
@@ -99,7 +108,7 @@ export async function adminUploadPlayerPhoto(fd: FormData) {
     [id, photo]
   );
   await q('update users set avatar=$2 where id=$1', [id, userPhotoUrl(id)]);
-  back('ok', 'Foto del jugador actualizada.', '#jugadores');
+  done(fd, 'ok', 'Foto del jugador actualizada.', '#jugadores');
 }
 
 export async function adminRemovePlayerPhoto(fd: FormData) {
@@ -108,13 +117,13 @@ export async function adminRemovePlayerPhoto(fd: FormData) {
   await q('delete from user_photos where user_id=$1', [id]);
   // Si entra con Discord, vuelve a aparecer su foto de Discord.
   await q("update users set avatar=null where id=$1 and avatar like '/api/user-photo/%'", [id]);
-  back('ok', 'Foto quitada.', '#jugadores');
+  done(fd, 'ok', 'Foto quitada.', '#jugadores');
 }
 
 export async function adminRemoveTeamLogo(fd: FormData) {
   await requireAdmin();
   await q('update teams set logo=null, logo_v=logo_v+1 where id=$1', [Number(fd.get('team_id'))]);
-  back('ok', 'Logo quitado.', '#equipos');
+  done(fd, 'ok', 'Logo quitado.', '#equipos');
 }
 
 export async function deleteTeam(fd: FormData) {
@@ -281,4 +290,104 @@ export async function adminEditTeam(fd: FormData) {
   if (dup.length) back('err', 'Ya existe otro equipo con ese nombre.', '#equipos');
   await q('update teams set name=$2, tag=$3 where id=$1', [id, name, tag]);
   back('ok', 'Equipo actualizado.', '#equipos');
+}
+
+// ---------- Editar jugador / equipo (páginas /admin/jugador/[id] y /admin/equipo/[id]) ----------
+function toEdit(path: string, kind: 'ok' | 'err', msg: string): never {
+  revalidatePath('/', 'layout');
+  redirect(`${path}?${kind}=${encodeURIComponent(msg)}`);
+}
+
+/** Saca a un jugador de su equipo sin borrar el equipo; si era capitán, pasa la capitanía al siguiente. */
+async function leaveTeam(userId: string, teamId: number) {
+  const [t] = await q('select captain_id from teams where id=$1', [teamId]);
+  await q('update users set team_id=null where id=$1', [userId]);
+  if (t && t.captain_id === userId) {
+    const [next] = await q('select id from users where team_id=$1 order by created_at limit 1', [teamId]);
+    await q('update teams set captain_id=$2 where id=$1', [teamId, next?.id ?? 'pendiente']);
+  }
+}
+
+export async function adminSavePlayer(fd: FormData) {
+  await requireAdmin();
+  const id = String(fd.get('user_id') ?? '');
+  const page = `/admin/jugador/${encodeURIComponent(id)}`;
+  const [u] = await q('select * from users where id=$1', [id]);
+  if (!u) back('err', 'Ese jugador ya no existe.', '#jugadores');
+  const name = String(fd.get('name') ?? '').trim().replace(/\s+/g, ' ');
+  const riot = String(fd.get('riot_id') ?? '').trim();
+  const rank = String(fd.get('rank') ?? '');
+  const role = String(fd.get('role') ?? '');
+  const teamRaw = String(fd.get('team_id') ?? '');
+  const newTeam = teamRaw ? Number(teamRaw) : null;
+  const makeCaptain = !!fd.get('captain');
+  if (name.length < 1 || name.length > 32) toEdit(page, 'err', 'El nombre debe tener entre 1 y 32 caracteres.');
+  if (riot && riot !== (u.riot_id ?? '') && !/^.{3,16}#[A-Za-z0-9]{2,5}$/.test(riot)) toEdit(page, 'err', 'El Riot ID debe tener el formato Nombre#TAG.');
+  if (newTeam != null && newTeam !== u.team_id) {
+    const [t] = await q('select id from teams where id=$1', [newTeam]);
+    if (!t) toEdit(page, 'err', 'Ese equipo ya no existe.');
+    const [{ n }] = await q('select count(*)::int as n from users where team_id=$1', [newTeam]);
+    if (n >= MAX_ROSTER) toEdit(page, 'err', `Ese equipo ya tiene ${MAX_ROSTER} jugadores.`);
+  }
+  if (u.team_id && u.team_id !== newTeam) await leaveTeam(id, u.team_id);
+  await q('update users set name=$2, riot_id=$3, rank=$4, role=$5, team_id=$6 where id=$1', [
+    id, name, riot || null, RANKS.includes(rank) ? rank : null, ROLES.includes(role) ? role : null, newTeam,
+  ]);
+  if (newTeam != null) {
+    const [t] = await q('select captain_id from teams where id=$1', [newTeam]);
+    const [cap] = await q('select 1 from users where id=$1 and team_id=$2', [t?.captain_id ?? '', newTeam]);
+    if (makeCaptain || !cap) await q('update teams set captain_id=$2 where id=$1', [newTeam, id]);
+  }
+  toEdit(page, 'ok', 'Jugador guardado.');
+}
+
+export async function adminSaveTeam(fd: FormData) {
+  await requireAdmin();
+  const id = Number(fd.get('team_id'));
+  const page = `/admin/equipo/${id}`;
+  const name = String(fd.get('name') ?? '').trim().replace(/\s+/g, ' ');
+  const tag = String(fd.get('tag') ?? '').trim().toUpperCase();
+  const captain = String(fd.get('captain_id') ?? '');
+  if (name.length < 3 || name.length > 30) toEdit(page, 'err', 'El nombre del equipo debe tener entre 3 y 30 caracteres.');
+  if (!/^[A-Z0-9]{2,5}$/.test(tag)) toEdit(page, 'err', 'El tag debe tener de 2 a 5 letras o números.');
+  const dup = await q('select 1 from teams where lower(name)=lower($1) and id<>$2', [name, id]);
+  if (dup.length) toEdit(page, 'err', 'Ya existe otro equipo con ese nombre.');
+  await q('update teams set name=$2, tag=$3 where id=$1', [id, name, tag]);
+  if (captain) {
+    const [m] = await q('select 1 from users where id=$1 and team_id=$2', [captain, id]);
+    if (m) await q('update teams set captain_id=$2 where id=$1', [id, captain]);
+  }
+  toEdit(page, 'ok', 'Equipo guardado.');
+}
+
+export async function adminKickFromTeam(fd: FormData) {
+  await requireAdmin();
+  const teamId = Number(fd.get('team_id'));
+  const userId = String(fd.get('user_id') ?? '');
+  await leaveTeam(userId, teamId);
+  toEdit(`/admin/equipo/${teamId}`, 'ok', 'Jugador quitado del equipo (quedó como agente libre).');
+}
+
+export async function adminAddPlayersToTeam(fd: FormData) {
+  await requireAdmin();
+  const teamId = Number(fd.get('team_id'));
+  const page = `/admin/equipo/${teamId}`;
+  const [t] = await q('select id, captain_id from teams where id=$1', [teamId]);
+  if (!t) back('err', 'Ese equipo ya no existe.', '#equipos');
+  const [{ n }] = await q('select count(*)::int as n from users where team_id=$1', [teamId]);
+  const free = MAX_ROSTER - n;
+  const lines = String(fd.get('players') ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
+  if (!lines.length) toEdit(page, 'err', 'Escribe al menos un jugador (uno por línea).');
+  if (lines.length > free) toEdit(page, 'err', `Solo caben ${free} jugador(es) más (máximo ${MAX_ROSTER}).`);
+  const [cap] = await q('select 1 from users where id=$1 and team_id=$2', [t.captain_id, teamId]);
+  for (let i = 0; i < lines.length; i++) {
+    const [nick, riot] = lines[i].split(/[,;]/).map((x) => x.trim());
+    const uid = `manual-${randomCode(10).toLowerCase()}`;
+    await q(
+      `insert into users (id, name, riot_id, team_id, created_at) values ($1,$2,$3,$4, now() + ($5 || ' milliseconds')::interval)`,
+      [uid, (nick || `Jugador ${n + i + 1}`).slice(0, 32), riot && riot.includes('#') ? riot.slice(0, 24) : null, teamId, String(i * 10)]
+    );
+    if (i === 0 && !cap) await q('update teams set captain_id=$2 where id=$1', [teamId, uid]);
+  }
+  toEdit(page, 'ok', `Se agregaron ${lines.length} jugador(es).`);
 }
