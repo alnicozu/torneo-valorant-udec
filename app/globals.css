@@ -512,3 +512,18 @@ textarea.input { resize: vertical; font-family: inherit; }
   .pcard-photo .initials { font-size: 48px; }
   .pcard-team { font-size: 12px; }
 }
+
+/* Equipos: tarjetas con logo grande */
+.team-card.tcard { padding: 0; gap: 0; overflow: hidden; }
+.tcard-logo { aspect-ratio: 16 / 10; display: grid; place-items: center; border-bottom: 1px solid var(--line); background: radial-gradient(circle at 30% 20%, rgba(139, 92, 246, .38), transparent 60%), radial-gradient(circle at 80% 90%, rgba(255, 70, 85, .28), transparent 55%), var(--bg-2); }
+.tcard-logo img { width: 70%; height: 80%; object-fit: contain; filter: drop-shadow(0 10px 18px rgba(0, 0, 0, .45)); transition: transform .25s ease; }
+.team-card.tcard:hover .tcard-logo img { transform: scale(1.05); }
+.tcard-tag { font-family: var(--display); font-size: 64px; letter-spacing: 1px; color: rgba(255, 255, 255, .9); }
+.tcard-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 12px; }
+/* Página de cada equipo: logo grande en el encabezado */
+.profile-head .team-logo.xl, .profile-head .team-badge.xl { width: 160px; height: 160px; border-radius: 18px; }
+.profile-head .team-badge.xl { font-size: 46px; }
+@media (max-width: 520px) {
+  .profile-head .team-logo.xl, .profile-head .team-badge.xl { width: 112px; height: 112px; }
+  .tcard-tag { font-size: 48px; }
+}

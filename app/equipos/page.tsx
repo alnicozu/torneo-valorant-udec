@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import Avatar from '@/components/Avatar';
-import TeamBadge from '@/components/TeamBadge';
-import { getTeams, MIN_ROSTER } from '@/lib/data';
+import { getTeams, MIN_ROSTER, teamLogoUrl } from '@/lib/data';
 
 export const metadata = { title: 'Equipos · Torneo de Valorant UdeC 5vs5' };
 
@@ -21,19 +20,21 @@ export default async function EquiposPage() {
           {teams.map((t) => {
             const ok = t.members.length >= MIN_ROSTER;
             return (
-              <Link key={t.id} href={`/equipos/${t.id}`} className="panel team-card">
-                <div className="team-top">
-                  <TeamBadge team={t} />
+              <Link key={t.id} href={`/equipos/${t.id}`} className="panel team-card tcard">
+                <div className="tcard-logo">
+                  {t.has_logo ? <img src={teamLogoUrl(t)} alt={`Logo de ${t.name}`} loading="lazy" /> : <span className="tcard-tag">{t.tag}</span>}
+                </div>
+                <div className="tcard-body">
                   <div style={{ minWidth: 0 }}>
                     <div className="team-name-lg">{t.name}</div>
-                    <div className="small muted">{t.members.length} jugadores</div>
+                    <div className="small muted"><span className="tag violet" style={{ marginRight: 8 }}>{t.tag}</span>{t.members.length} jugadores</div>
                   </div>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div className="roster-mini">
-                    {t.members.slice(0, 7).map((m) => <Avatar key={m.id} src={m.avatar} name={m.name} />)}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                    <div className="roster-mini">
+                      {t.members.slice(0, 7).map((m) => <Avatar key={m.id} src={m.avatar} name={m.name} />)}
+                    </div>
+                    <span className={`tag ${ok ? 'ok' : 'gold'}`}>{ok ? 'Completo' : `Faltan ${MIN_ROSTER - t.members.length}`}</span>
                   </div>
-                  <span className={`tag ${ok ? 'ok' : 'gold'}`}>{ok ? 'Completo' : `Faltan ${MIN_ROSTER - t.members.length}`}</span>
                 </div>
               </Link>
             );
