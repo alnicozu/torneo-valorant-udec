@@ -32,7 +32,7 @@ export default function PlayersTable({ players }: { players: any[] }) {
         <div className="panel" style={{ overflowX: 'auto' }}>
           <table className="table">
             <thead>
-              <tr><th>Jugador</th><th>Equipo</th><th className="hide-sm">Rol</th><th className="hide-sm">Rango</th></tr>
+              <tr><th>Jugador (usuario de Discord vinculado)</th><th>Equipo</th><th className="hide-sm">Rol</th><th className="hide-sm">Rango</th></tr>
             </thead>
             <tbody>
               {list.map((p) => (
