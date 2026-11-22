@@ -37,6 +37,7 @@ export default async function AdminPage({ searchParams }: { searchParams: { ok?:
           <a className="btn ghost sm" href="#jugadores">Jugadores</a>
           <a className="btn ghost sm" href="#manual">Agregar equipo</a>
           <a className="btn ghost sm" href="#simulacion">Simulación</a>
+          <Link className="btn sm" href="/admin/horarios">⏱ Modelo de horarios</Link>
           <a className="btn ghost sm" href="#ajustes">Ajustes</a>
           <a className="btn sm" href="/api/admin/export">⬇ Descargar inscritos (Excel/CSV)</a>
         </div>

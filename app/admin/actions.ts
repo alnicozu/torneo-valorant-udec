@@ -6,6 +6,7 @@ import { q } from '@/lib/db';
 import { generateBracket, recomputeBracket } from '@/lib/bracket';
 import { getTeams, MAX_ROSTER, MIN_ROSTER, newRegCode, randomCode, RANKS, removeFromTeam, ROLES, setSetting, userPhotoUrl } from '@/lib/data';
 import { createBotPlayer, createBotTeam, randomScores } from '@/lib/sim';
+import { fechaHora, normalizar, resolver, type Publicado } from '@/lib/horarios';
 
 function back(kind: 'ok' | 'err', msg: string, hash = ''): never {
   revalidatePath('/', 'layout');
@@ -390,4 +391,51 @@ export async function adminAddPlayersToTeam(fd: FormData) {
     if (i === 0 && !cap) await q('update teams set captain_id=$2 where id=$1', [teamId, uid]);
   }
   toEdit(page, 'ok', `Se agregaron ${lines.length} jugador(es).`);
+}
+
+// ---------- Modelo de horarios (/admin/horarios) ----------
+function toHorarios(kind: 'ok' | 'err', msg: string): never {
+  revalidatePath('/', 'layout');
+  redirect(`/admin/horarios?${kind}=${encodeURIComponent(msg)}`);
+}
+function leerParametros(fd: FormData) {
+  try {
+    return normalizar(JSON.parse(String(fd.get('params') ?? '{}')));
+  } catch {
+    toHorarios('err', 'No se pudieron leer los parámetros.');
+  }
+}
+
+export async function adminSaveScheduleDraft(fd: FormData) {
+  await requireAdmin();
+  const p = leerParametros(fd);
+  await setSetting('schedule_draft', JSON.stringify(p));
+  toHorarios('ok', 'Borrador guardado. Los demás admins verán estos parámetros al abrir el modelo.');
+}
+
+export async function adminPublishSchedule(fd: FormData) {
+  await requireAdmin();
+  const p = leerParametros(fd);
+  // Se vuelve a resolver en el servidor: se publica exactamente lo que calcula el modelo.
+  const { mejor } = resolver(p);
+  if (!mejor.factible) toHorarios('err', 'No se puede publicar: hay partidos que no caben en los días disponibles.');
+  const pub: Publicado = { parametros: p, regla: mejor.regla, asignados: mejor.asignados, publicadoEn: new Date().toISOString() };
+  await setSetting('schedule_published', JSON.stringify(pub));
+  await setSetting('schedule_draft', JSON.stringify(p));
+  let aplicados = 0;
+  if (fd.get('aplicar')) {
+    for (const a of mejor.asignados) {
+      const r = a.tercer
+        ? await q('update matches set scheduled_at=$1 where third_place returning id', [fechaHora(p, a)])
+        : await q('update matches set scheduled_at=$1 where round=$2 and slot=$3 and not third_place returning id', [fechaHora(p, a), a.ronda, a.slot]);
+      aplicados += r.length;
+    }
+  }
+  toHorarios('ok', `Programación publicada (${mejor.asignados.length} partidos).${aplicados ? ` Se pusieron los horarios en ${aplicados} partidos del cuadro.` : ''}`);
+}
+
+export async function adminUnpublishSchedule() {
+  await requireAdmin();
+  await q("delete from settings where key='schedule_published'");
+  toHorarios('ok', 'Se retiró la programación publicada. Ya no se ve en Calendario.');
 }
