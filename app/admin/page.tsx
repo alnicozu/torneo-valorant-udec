@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { roundName } from '@/lib/bracket';
 import { getAllUsers, getMatches, getRegCodes, getSettings, getTeams, MIN_ROSTER } from '@/lib/data';
-import { adminCreateTeam, adminEditTeam, simDeleteAll, simFillTeams, simFreeAgents, simRound, simTeams, adminDeletePlayer, adminRemoveFromTeam, adminRemoveTeamLogo, adminUploadTeamLogo, adminUploadPlayerPhoto, adminRemovePlayerPhoto, createRegCode, deleteRegCode, createBracket, deleteBracket, deleteTeam, saveMatch, saveSettings } from './actions';
+import { adminCreateTeam, adminEditTeam, simDeleteAll, simFillTeams, simFreeAgents, simRound, simTeams, adminDeletePlayer, adminRemoveFromTeam, adminRemoveTeamLogo, adminUploadTeamLogo, adminUploadPlayerPhoto, adminRemovePlayerPhoto, adminDeleteAllTeams, adminDeleteAllPlayers, createRegCode, deleteRegCode, createBracket, deleteBracket, deleteTeam, saveMatch, saveSettings } from './actions';
 import ConfirmButton from '@/components/ConfirmButton';
 import Avatar from '@/components/Avatar';
 import TeamBadge from '@/components/TeamBadge';
@@ -152,7 +152,14 @@ export default async function AdminPage({ searchParams }: { searchParams: { ok?:
       )}
 
       <section id="equipos" className="section" style={{ scrollMarginTop: 90 }}>
-        <h2 className="section-title" style={{ marginBottom: 14 }}>Equipos ({teams.length})</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
+          <h2 className="section-title" style={{ margin: 0 }}>Equipos ({teams.length})</h2>
+          {teams.length > 0 && (
+            <form action={adminDeleteAllTeams}>
+              <ConfirmButton message={`¿Eliminar los ${teams.length} equipos? También se borra el cuadro y los códigos de inscripción quedan libres. Los jugadores NO se borran: quedan sin equipo. No se puede deshacer.`}>Eliminar todos los equipos</ConfirmButton>
+            </form>
+          )}
+        </div>
         {teams.length === 0 ? <div className="empty">Sin equipos todavía.</div> : (
           <div className="panel" style={{ overflowX: 'auto' }}>
             <table className="table">
@@ -195,7 +202,14 @@ export default async function AdminPage({ searchParams }: { searchParams: { ok?:
       </section>
 
       <section id="jugadores" className="section" style={{ scrollMarginTop: 90 }}>
-        <h2 className="section-title" style={{ marginBottom: 6 }}>Jugadores ({users.length})</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 6 }}>
+          <h2 className="section-title" style={{ margin: 0 }}>Jugadores ({users.length})</h2>
+          {users.length > 0 && (
+            <form action={adminDeleteAllPlayers}>
+              <ConfirmButton message={`¿Eliminar los ${users.length} jugadores (incluidos los admins)? Se borran sus perfiles, Riot ID y fotos; los equipos quedan vacíos. Podrán volver a entrar con Discord y empiezan de cero. No se puede deshacer.`}>Eliminar todos los jugadores</ConfirmButton>
+            </form>
+          )}
+        </div>
         <p className="muted small" style={{ marginTop: 0, marginBottom: 14 }}>
           <b>Quitar del equipo</b> lo deja como agente libre. <b>Eliminar</b> borra su perfil (Riot ID, rango, equipo), pero no lo bloquea: si vuelve a entrar con Discord, empieza de cero.
         </p>

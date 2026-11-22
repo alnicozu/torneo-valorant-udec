@@ -128,6 +128,24 @@ export async function deleteTeam(fd: FormData) {
   back('ok', 'Equipo eliminado.', '#equipos');
 }
 
+/** Borra todos los equipos (y el cuadro). Los jugadores quedan como agentes libres. */
+export async function adminDeleteAllTeams() {
+  await requireAdmin();
+  await q('delete from matches');
+  await q('update users set team_id=null where team_id is not null');
+  await q('update reg_codes set team_id=null, used_at=null where team_id is not null'); // los códigos quedan libres otra vez
+  await q('delete from teams');
+  back('ok', 'Se eliminaron todos los equipos y el cuadro. Los jugadores quedaron sin equipo.', '#equipos');
+}
+
+/** Borra todos los perfiles de jugadores. Pueden volver a entrar con Discord y empiezan de cero. */
+export async function adminDeleteAllPlayers() {
+  await requireAdmin();
+  await q('delete from user_photos');
+  await q('delete from users');
+  back('ok', 'Se eliminaron todos los jugadores. Los equipos quedaron vacíos.', '#jugadores');
+}
+
 export async function adminRemoveFromTeam(fd: FormData) {
   await requireAdmin();
   const id = String(fd.get('user_id') ?? '');
