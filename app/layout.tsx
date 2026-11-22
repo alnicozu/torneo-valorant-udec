@@ -13,7 +13,7 @@ import { isDemo } from '@/lib/db';
 export const dynamic = 'force-dynamic';
 
 const SITE_URL = process.env.NEXTAUTH_URL || 'https://torneo-udec.vercel.app';
-const DESCRIPTION = 'Torneo de Valorant 5vs5, abierto para todo Chile. 1er lugar $45.000 · 2do lugar $30.000. Inscripción $7.500 por equipo hasta el sábado 21 de noviembre. Se juega el domingo 22.';
+const DESCRIPTION = 'Torneo de Valorant 5vs5, abierto para todo Chile. 1er lugar $45.000 · 2do lugar $30.000. Inscripción $7.500 por equipo hasta el viernes 20 de noviembre. Se juega el 21 y 22 de noviembre.';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
