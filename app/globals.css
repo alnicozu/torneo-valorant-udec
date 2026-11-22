@@ -482,3 +482,7 @@ textarea.input { resize: vertical; font-family: inherit; }
 .next-vs { display: flex; align-items: center; gap: 14px; font-weight: 800; font-size: 20px; flex-wrap: wrap; }
 .next-vs b { font-family: var(--display); font-weight: 400; color: var(--red); font-size: 22px; }
 .next-meta { color: var(--muted); font-weight: 600; }
+
+/* Video "Sobre el torneo" (portada) */
+.video-wrap { padding: 8px; }
+.video-wrap video { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 10px; background: #000; }

@@ -68,6 +68,18 @@ export default async function Home() {
           </div>
         </div>
 
+        <div className="section" id="sobre-el-torneo">
+          <div className="section-head">
+            <h2 className="section-title">Sobre el torneo</h2>
+          </div>
+          <div className="panel video-wrap">
+            {/* #t=0.1 hace que el navegador muestre el primer cuadro como portada */}
+            <video src="/video/sobre-el-torneo.mp4#t=0.1" controls playsInline preload="metadata">
+              Tu navegador no puede reproducir este video.
+            </video>
+          </div>
+        </div>
+
         <div className="section" id="inscribete">
           <div className="section-head">
             <h2 className="section-title">Inscríbete <span className="fee-inline">$7.500 por equipo</span></h2>
