@@ -27,6 +27,14 @@ export default async function Home() {
     <>
       <section className="hero">
         <div className="container hero-inner">
+          {AUSPICIADORES.length > 0 && (
+            <a className="hero-sponsor" href="#auspiciadores">
+              <span className="l">{AUSPICIADORES.length === 1 ? 'Auspicia' : 'Auspician'}</span>
+              {AUSPICIADORES.map((a) => (
+                <span key={a.nombre} className="s"><img src={a.logo} alt="" />{a.nombre}</span>
+              ))}
+            </a>
+          )}
           <span className="hero-kicker">
             {settings.registration_open ? <><b>●</b> Inscripciones abiertas</> : <>Inscripciones cerradas</>}
             <span style={{ opacity: .4 }}>|</span> <b style={{ color: 'var(--gold)' }}>$7.500 por equipo</b> <span style={{ opacity: .4 }}>|</span> 21 y 22 de noviembre
@@ -96,7 +104,6 @@ export default async function Home() {
                       <div className="sponsor-kicker">Auspiciador oficial</div>
                       <div className="sponsor-name">{a.nombre}</div>
                       <div className="sponsor-desc">{a.descripcion}</div>
-                      {a.aporte && <div className="sponsor-amount">{a.aporte}</div>}
                     </div>
                   </>
                 );

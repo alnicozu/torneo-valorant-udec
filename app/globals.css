@@ -535,8 +535,14 @@ textarea.input { resize: vertical; font-family: inherit; }
 .sponsor-kicker { color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
 .sponsor-name { font-family: var(--display); font-size: 34px; line-height: 1.05; text-transform: uppercase; color: var(--gold); margin-top: 6px; }
 .sponsor-desc { color: var(--muted); margin-top: 6px; }
-.sponsor-amount { display: inline-block; margin-top: 14px; padding: 7px 14px; background: #e9d49a; color: #12131f; font-weight: 800; font-size: 14px; letter-spacing: .5px; text-transform: uppercase; clip-path: var(--cut); }
 @media (max-width: 520px) {
   .sponsor { flex-direction: column; text-align: center; }
   .sponsor-logo { width: 180px; height: 180px; }
 }
+
+/* Distintivo del auspiciador arriba de la portada */
+.hero-sponsor { display: flex; width: fit-content; max-width: 100%; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; margin: 0 auto 14px; padding: 6px 16px 6px 8px; border-radius: 999px; background: rgba(9, 10, 20, .55); border: 1px solid rgba(233, 212, 154, .45); backdrop-filter: blur(6px); transition: border-color .15s ease, background .15s ease; }
+.hero-sponsor:hover { border-color: rgba(233, 212, 154, .9); background: rgba(9, 10, 20, .75); }
+.hero-sponsor .l { color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; padding-left: 6px; }
+.hero-sponsor .s { display: inline-flex; align-items: center; gap: 8px; color: #e9d49a; font-weight: 800; font-size: 15px; }
+.hero-sponsor img { width: 34px; height: 34px; border-radius: 8px; object-fit: cover; }
