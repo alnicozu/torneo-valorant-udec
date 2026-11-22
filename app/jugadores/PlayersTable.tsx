@@ -1,23 +1,9 @@
 'use client';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import PlayerPhoto from '@/components/PlayerPhoto';
 
 const ROLES = ['Duelista', 'Iniciador', 'Controlador', 'Centinela', 'Flex'];
-
-/** Las fotos de Discord vienen en 128 px por defecto; pedimos una más grande para la tarjeta. */
-function bigAvatar(src: string) {
-  if (/^https:\/\/cdn\.discordapp\.com\/avatars\//.test(src)) return src.replace(/\?.*$/, '') + '?size=512';
-  return src;
-}
-function initials(name: string) {
-  return (name || '').replace(/[^\p{L}\p{N}]/gu, '').slice(0, 2) || '?';
-}
-
-function PlayerPhoto({ src, name }: { src?: string | null; name: string }) {
-  const [broken, setBroken] = useState(false);
-  if (!src || broken) return <span className="initials">{initials(name)}</span>;
-  return <img src={bigAvatar(src)} alt="" loading="lazy" onError={() => setBroken(true)} />;
-}
 
 export default function PlayersTable({ players }: { players: any[] }) {
   const [text, setText] = useState('');
