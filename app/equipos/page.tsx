@@ -38,7 +38,7 @@ export default async function EquiposPage() {
               <Link key={t.id} href={`/jugadores/${encodeURIComponent(c.id)}`} className="pcard pcard-captain">
                 <div className="pcard-photo">
                   <PlayerPhoto src={c.avatar} name={c.name} />
-                  <span className="cap-badge">👑 Capitán</span>
+                  <span className="cap-badge"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M3 7l4.5 4L12 4l4.5 7L21 7l-2 11H5L3 7zm2 13h14v2H5v-2z" /></svg>Capitán</span>
                   <div className="pcard-team">
                     {t.has_logo ? <img className="cap-team-logo" src={teamLogoUrl(t)} alt="" /> : <span className="tag violet">{t.tag}</span>}
                     <span className="tn">{t.name}</span>
