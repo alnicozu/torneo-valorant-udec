@@ -18,7 +18,8 @@ const corto = (a: Asignado, maxRonda: number) => {
  */
 export default function ScheduleView({ parametros, asignados, nombres }: { parametros: Parametros; asignados: Asignado[]; nombres?: Record<string, string> }) {
   const maxRonda = asignados.length ? Math.max(...asignados.map((a) => a.ronda)) : 1;
-  const dias = parametros.dias.map((d, i) => ({ ...d, i, ini: aMin(d.inicio), fin: aMin(d.fin) }));
+  // a / b: minutos desde las 00:00 (para posicionar). d.inicio / d.fin siguen siendo el texto "HH:MM".
+  const dias = parametros.dias.map((d, i) => ({ ...d, i, a: aMin(d.inicio), b: aMin(d.fin) }));
   return (
     <div className="sch">
       <div className="sch-legend">
@@ -29,9 +30,9 @@ export default function ScheduleView({ parametros, asignados, nombres }: { param
       </div>
       {dias.map((d) => {
         const del = asignados.filter((a) => a.dia === d.i);
-        const len = d.fin - d.ini;
+        const len = d.b - d.a;
         const horas: number[] = [];
-        for (let h = Math.ceil(d.ini / 60) * 60; h <= d.fin; h += 60) horas.push(h);
+        for (let h = Math.ceil(d.a / 60) * 60; h <= d.b; h += 60) horas.push(h);
         return (
           <div key={d.fecha} className="sch-day">
             <div className="sch-day-head">
@@ -41,15 +42,15 @@ export default function ScheduleView({ parametros, asignados, nombres }: { param
             <div className="gantt-scroll">
               <div className="gantt">
                 <div className="gantt-scale">
-                  {horas.map((h) => <span key={h} style={{ left: `${((h - d.ini) / len) * 100}%` }}>{aHora(h)}</span>)}
+                  {horas.map((h) => <span key={h} style={{ left: `${((h - d.a) / len) * 100}%` }}>{aHora(h)}</span>)}
                 </div>
                 <div className="gantt-track">
-                  {horas.map((h) => <i key={h} className="gantt-tick" style={{ left: `${((h - d.ini) / len) * 100}%` }} />)}
+                  {horas.map((h) => <i key={h} className="gantt-tick" style={{ left: `${((h - d.a) / len) * 100}%` }} />)}
                   {del.map((a) => (
                     <div
                       key={a.id}
                       className={`gantt-block ${etapa(a, maxRonda)}`}
-                      style={{ left: `${((a.inicio - d.ini) / len) * 100}%`, width: `${(a.dur / len) * 100}%` }}
+                      style={{ left: `${((a.inicio - d.a) / len) * 100}%`, width: `${(a.dur / len) * 100}%` }}
                       title={`${a.id} · ${a.etiqueta} · ${aHora(a.inicio)}–${aHora(a.fin)}`}
                     >
                       {corto(a, maxRonda)}
