@@ -158,7 +158,7 @@ export function partidosDelCuadro(p: Parametros): Partido[] {
       const id = `P${++k}`;
       const m: Partido = {
         id, ronda: 1, slot: s, tercer: false, bo: bo(1), dur: dur(bo(1)), deps: [],
-        etiqueta: `${roundName(1, rondas)} · ${s + 1}`,
+        etiqueta: size === 2 ? roundName(1, rondas) : `${roundName(1, rondas)} · ${s + 1}`,
         cruce: `Sembrado ${Math.min(a, b)} vs Sembrado ${Math.max(a, b)}`,
       };
       real.set(`1-${s}`, m);
