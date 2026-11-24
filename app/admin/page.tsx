@@ -8,6 +8,7 @@ import ConfirmButton from '@/components/ConfirmButton';
 import Avatar from '@/components/Avatar';
 import TeamBadge from '@/components/TeamBadge';
 import LogoUploader from '@/components/LogoUploader';
+import AdminUnlock from '@/components/AdminUnlock';
 
 export const metadata = { title: 'Admin · Torneo de Valorant UdeC 5vs5' };
 
@@ -24,7 +25,7 @@ export default async function AdminPage({ searchParams }: { searchParams: { ok?:
   const editable = matches.filter((m) => !(m.round === 1 && (m.team1_id == null) !== (m.team2_id == null)));
 
   return (
-    <div className="container">
+    <div id="admin-root" className="container admin-locked">
       <div className="page-head">
         <div className="eyebrow">Organización</div>
         <h1 className="title">Panel de admin</h1>
@@ -35,12 +36,13 @@ export default async function AdminPage({ searchParams }: { searchParams: { ok?:
           <a className="btn ghost sm" href="#partidos">Resultados</a>
           <a className="btn ghost sm" href="#equipos">Equipos</a>
           <a className="btn ghost sm" href="#jugadores">Jugadores</a>
-          <a className="btn ghost sm" href="#manual">Agregar equipo</a>
-          <a className="btn ghost sm" href="#simulacion">Simulación</a>
+          <a className="btn ghost sm admin-adv" href="#manual">Agregar equipo</a>
+          <a className="btn ghost sm admin-adv" href="#simulacion">Simulación</a>
           <Link className="btn sm" href="/admin/horarios">⏱ Modelo de horarios</Link>
           <a className="btn ghost sm" href="#ajustes">Ajustes</a>
           <a className="btn sm" href="/api/admin/export">⬇ Descargar inscritos (Excel/CSV)</a>
         </div>
+        <div style={{ marginTop: 12 }}><AdminUnlock /></div>
       </div>
 
       {searchParams.ok && <div className="alert ok">{searchParams.ok}</div>}
@@ -156,7 +158,7 @@ export default async function AdminPage({ searchParams }: { searchParams: { ok?:
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
           <h2 className="section-title" style={{ margin: 0 }}>Equipos ({teams.length})</h2>
           {teams.length > 0 && (
-            <form action={adminDeleteAllTeams}>
+            <form action={adminDeleteAllTeams} className="admin-adv">
               <ConfirmButton message={`¿Eliminar los ${teams.length} equipos? También se borra el cuadro y los códigos de inscripción quedan libres. Los jugadores NO se borran: quedan sin equipo. No se puede deshacer.`}>Eliminar todos los equipos</ConfirmButton>
             </form>
           )}
@@ -173,15 +175,15 @@ export default async function AdminPage({ searchParams }: { searchParams: { ok?:
                     <td className="hide-sm" style={{ fontFamily: 'monospace' }}>{t.invite_code}</td>
                     <td style={{ textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                      <Link className="btn ghost sm" href={`/admin/equipo/${t.id}`}>Editar</Link>
-                      <details className="edit-inline">
+                      <Link className="btn ghost sm admin-adv" href={`/admin/equipo/${t.id}`}>Editar</Link>
+                      <details className="edit-inline admin-adv">
                         <summary className="btn ghost sm">{t.has_logo ? 'Cambiar logo' : 'Subir logo'}</summary>
                         <div className="edit-pop">
                           <LogoUploader key={t.logo_v ?? 0} action={adminUploadTeamLogo} hidden={{ team_id: t.id }} />
                         </div>
                       </details>
                       {t.has_logo && (
-                        <form action={adminRemoveTeamLogo}><input type="hidden" name="team_id" value={t.id} /><ConfirmButton className="btn ghost sm" message={`¿Quitar el logo de "${t.name}"?`}>Quitar logo</ConfirmButton></form>
+                        <form action={adminRemoveTeamLogo} className="admin-adv"><input type="hidden" name="team_id" value={t.id} /><ConfirmButton className="btn ghost sm" message={`¿Quitar el logo de "${t.name}"?`}>Quitar logo</ConfirmButton></form>
                       )}
                       <form action={deleteTeam}><input type="hidden" name="team_id" value={t.id} /><ConfirmButton message={`¿Eliminar el equipo "${t.name}"? Sus jugadores quedan sin equipo, pero no se borran.`}>Eliminar</ConfirmButton></form>
                       </div>
@@ -198,48 +200,47 @@ export default async function AdminPage({ searchParams }: { searchParams: { ok?:
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 6 }}>
           <h2 className="section-title" style={{ margin: 0 }}>Jugadores ({users.length})</h2>
           {users.length > 0 && (
-            <form action={adminDeleteAllPlayers}>
+            <form action={adminDeleteAllPlayers} className="admin-adv">
               <ConfirmButton message={`¿Eliminar los ${users.length} jugadores (incluidos los admins)? Se borran sus perfiles, Riot ID y fotos; los equipos quedan vacíos. Podrán volver a entrar con Discord y empiezan de cero. No se puede deshacer.`}>Eliminar todos los jugadores</ConfirmButton>
             </form>
           )}
         </div>
         <p className="muted small" style={{ marginTop: 0, marginBottom: 14 }}>
-          <b>Quitar del equipo</b> lo deja como agente libre. <b>Eliminar</b> borra su perfil (Riot ID, rango, equipo), pero no lo bloquea: si vuelve a entrar con Discord, empieza de cero.
+          <span className="admin-adv"><b>Quitar del equipo</b> lo deja como agente libre. </span><b>Eliminar</b> borra su perfil (Riot ID, rango, equipo), pero no lo bloquea: si vuelve a entrar con Discord, empieza de cero.
         </p>
         {users.length === 0 ? <div className="empty">Nadie ha entrado todavía.</div> : (
           <div className="panel" style={{ overflowX: 'auto' }}>
             <table className="table">
-              <thead><tr><th>Jugador</th><th>Equipo</th><th className="hide-sm">ID de Discord</th><th></th></tr></thead>
+              <thead><tr><th>Jugador</th><th>Equipo</th><th></th></tr></thead>
               <tbody>
                 {users.map((u) => (
                   <tr key={u.id}>
                     <td>
                       <div className="player-cell">
                         <Avatar src={u.avatar} name={u.name} />
-                        <span>{u.name}{u.is_bot && <span className="tag bot">Bot</span>}{u.id.startsWith('manual-') && <span className="tag">Sin Discord</span>}<div className="riot">{u.riot_id ?? 'Sin Riot ID'}</div></span>
+                        <span>{u.name}{u.is_bot && <span className="tag bot">Bot</span>}<div className="riot">{u.riot_id ?? 'Sin Riot ID'}</div></span>
                       </div>
                     </td>
                     <td>
                       {u.team_id ? <><span className="tag violet" style={{ marginRight: 6 }}>{u.team_tag}</span>{u.is_captain && <span className="tag gold">Capitán</span>}</> : <span className="muted small">Sin equipo</span>}
                     </td>
-                    <td className="hide-sm" style={{ fontFamily: 'monospace', fontSize: 12 }}>{u.id}</td>
                     <td>
                       <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                        <Link className="btn ghost sm" href={`/admin/jugador/${encodeURIComponent(u.id)}`}>Editar</Link>
+                        <Link className="btn ghost sm admin-adv" href={`/admin/jugador/${encodeURIComponent(u.id)}`}>Editar</Link>
                         {u.team_id && (
-                          <form action={adminRemoveFromTeam}>
+                          <form action={adminRemoveFromTeam} className="admin-adv">
                             <input type="hidden" name="user_id" value={u.id} />
                             <ConfirmButton className="btn ghost sm" message={`¿Quitar a ${u.name} de ${u.team_name}?`}>Quitar del equipo</ConfirmButton>
                           </form>
                         )}
-                        <details className="edit-inline">
+                        <details className="edit-inline admin-adv">
                           <summary className="btn ghost sm">{u.avatar?.startsWith('/api/user-photo/') ? 'Cambiar foto' : 'Subir foto'}</summary>
                           <div className="edit-pop">
                             <LogoUploader key={u.avatar ?? ''} action={adminUploadPlayerPhoto} field="photo" hidden={{ user_id: u.id }} saveLabel="Guardar foto" fit="cover" round />
                           </div>
                         </details>
                         {u.avatar?.startsWith('/api/user-photo/') && (
-                          <form action={adminRemovePlayerPhoto}>
+                          <form action={adminRemovePlayerPhoto} className="admin-adv">
                             <input type="hidden" name="user_id" value={u.id} />
                             <ConfirmButton className="btn ghost sm" message={`¿Quitar la foto de ${u.name}?`}>Quitar foto</ConfirmButton>
                           </form>
@@ -258,7 +259,7 @@ export default async function AdminPage({ searchParams }: { searchParams: { ok?:
         )}
       </section>
 
-      <section id="manual" className="section panel pad" style={{ scrollMarginTop: 90 }}>
+      <section id="manual" className="section panel pad admin-adv" style={{ scrollMarginTop: 90 }}>
         <h2 className="section-title" style={{ fontSize: 22 }}>Agregar equipo a mano</h2>
         <p className="muted small" style={{ marginTop: 4 }}>
           Para equipos que se inscribieron por WhatsApp o Instagram y no van a entrar con Discord. Escribe un jugador por línea: <code>Nombre, Riot#TAG</code>. El primero queda como capitán.
@@ -276,7 +277,7 @@ export default async function AdminPage({ searchParams }: { searchParams: { ok?:
         </form>
       </section>
 
-      <section id="simulacion" className="section panel pad sim-panel" style={{ scrollMarginTop: 90 }}>
+      <section id="simulacion" className="section panel pad sim-panel admin-adv" style={{ scrollMarginTop: 90 }}>
         <h2 className="section-title" style={{ fontSize: 22 }}>Simulación (pruebas)</h2>
         <p className="muted small" style={{ marginTop: 4 }}>
           Crea jugadores y equipos simulados con nombres, Riot ID, rangos y avatares realistas. En la página pública se ven como cualquier jugador;

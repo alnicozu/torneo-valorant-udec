@@ -595,3 +595,6 @@ textarea.input { resize: vertical; font-family: inherit; }
 .sch-legend i.early { background: #c2344a; } .sch-legend i.semis { background: #6d45d6; } .sch-legend i.final { background: #d9a91f; } .sch-legend i.third { background: #b5652e; }
 .sch-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; vertical-align: 1px; }
 .sch-dot.early { background: #c2344a; } .sch-dot.semis { background: #6d45d6; } .sch-dot.final { background: #d9a91f; } .sch-dot.third { background: #b5652e; }
+
+/* Panel de admin: funciones avanzadas ocultas hasta pulsar "Mostrar funciones ocultas" */
+.admin-locked .admin-adv { display: none !important; }
