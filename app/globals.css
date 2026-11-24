@@ -598,3 +598,4 @@ textarea.input { resize: vertical; font-family: inherit; }
 
 /* Panel de admin: funciones avanzadas ocultas hasta pulsar "Mostrar funciones ocultas" */
 .admin-locked .admin-adv { display: none !important; }
+.admin-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 100; padding: 10px 16px; border-radius: 10px; background: rgba(9, 10, 20, .92); border: 1px solid var(--line-2); color: var(--text); font-size: 13px; font-weight: 700; box-shadow: 0 12px 30px rgba(0, 0, 0, .45); }

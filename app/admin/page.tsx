@@ -28,7 +28,7 @@ export default async function AdminPage({ searchParams }: { searchParams: { ok?:
     <div id="admin-root" className="container admin-locked">
       <div className="page-head">
         <div className="eyebrow">Organización</div>
-        <h1 className="title">Panel de admin</h1>
+        <AdminUnlock>Panel de admin</AdminUnlock>
         <div className="tabs-inline" style={{ marginTop: 16 }}>
           <a className="btn ghost sm" href="#ajustes">Anuncio</a>
           <a className="btn ghost sm" href="#codigos">Códigos</a>
@@ -42,7 +42,6 @@ export default async function AdminPage({ searchParams }: { searchParams: { ok?:
           <a className="btn ghost sm" href="#ajustes">Ajustes</a>
           <a className="btn sm" href="/api/admin/export">⬇ Descargar inscritos (Excel/CSV)</a>
         </div>
-        <div style={{ marginTop: 12 }}><AdminUnlock /></div>
       </div>
 
       {searchParams.ok && <div className="alert ok">{searchParams.ok}</div>}
