@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { roundName } from '@/lib/bracket';
 import { getAllUsers, getMatches, getRegCodes, getSettings, getTeams, MIN_ROSTER } from '@/lib/data';
-import { adminCreateTeam, simDeleteAll, simFillTeams, simFreeAgents, simRound, simTeams, adminDeletePlayer, adminRemoveFromTeam, adminRemoveTeamLogo, adminUploadTeamLogo, adminUploadPlayerPhoto, adminRemovePlayerPhoto, adminDeleteAllTeams, adminDeleteAllPlayers, createRegCode, deleteRegCode, createBracket, deleteBracket, deleteTeam, saveMatch, saveSettings } from './actions';
+import { adminCreateTeam, simDeleteAll, simFillTeams, simFreeAgents, simRound, simTeams, adminDeletePlayer, adminRemoveFromTeam, adminRemoveTeamLogo, adminUploadTeamLogo, adminUploadPlayerPhoto, adminRemovePlayerPhoto, adminDeleteAllTeams, adminDeleteAllPlayers, adminAssignCodesToTeams, adminSetCodeNote, createRegCode, deleteRegCode, createBracket, deleteBracket, deleteTeam, saveMatch, saveSettings } from './actions';
 import ConfirmButton from '@/components/ConfirmButton';
 import Avatar from '@/components/Avatar';
 import TeamBadge from '@/components/TeamBadge';
@@ -17,6 +17,7 @@ export default async function AdminPage({ searchParams }: { searchParams: { ok?:
   if (!user?.isAdmin) redirect('/');
   const [teams, matches, settings, users, codes] = await Promise.all([getTeams(), getMatches(), getSettings(), getAllUsers(), getRegCodes()]);
   const freeCodes = codes.filter((c) => !c.team_id).length;
+  const teamsSinCodigo = teams.filter((t) => !codes.some((c) => c.team_id === t.id)).length;
   const botUsers = users.filter((u) => u.is_bot).length;
   const botTeams = teams.filter((t) => t.is_bot).length;
   const teamMap = new Map(teams.map((t) => [t.id, t]));
@@ -65,8 +66,17 @@ export default async function AdminPage({ searchParams }: { searchParams: { ok?:
                 {codes.map((c) => (
                   <tr key={c.code}>
                     <td style={{ fontFamily: 'monospace', fontSize: 16, fontWeight: 700, letterSpacing: 1, color: c.team_id ? 'var(--muted)' : 'var(--gold)' }}>{c.code}</td>
-                    <td>{c.team_id ? <span className="tag violet">Usado · {c.team_name}</span> : <span className="tag ok">Disponible</span>}</td>
-                    <td className="hide-sm muted small">{c.note ?? ''}</td>
+                    <td>{c.team_id ? <span className="tag violet">Usado{c.team_name ? ` · ${c.team_name}` : ''}</span> : <span className="tag ok">Disponible</span>}</td>
+                    <td className="hide-sm muted small">
+                      <details className="edit-inline note-edit">
+                        <summary title="Editar nota">{c.note || <span style={{ opacity: .6 }}>+ Agregar nota</span>}</summary>
+                        <form action={adminSetCodeNote} className="edit-pop" style={{ left: 0, right: 'auto' }}>
+                          <input type="hidden" name="code" value={c.code} />
+                          <input className="input" name="note" defaultValue={c.note ?? ''} maxLength={80} placeholder="Nota" aria-label="Nota" />
+                          <button className="btn sm">Guardar</button>
+                        </form>
+                      </details>
+                    </td>
                     <td style={{ textAlign: 'right' }}>
                       {!c.team_id && (
                         <form action={deleteRegCode}>
@@ -82,6 +92,11 @@ export default async function AdminPage({ searchParams }: { searchParams: { ok?:
           </div>
         )}
         <p className="muted small" style={{ marginBottom: 0, marginTop: 10 }}>{freeCodes} disponibles · {codes.length - freeCodes} usados</p>
+        {teamsSinCodigo > 0 && (
+          <form action={adminAssignCodesToTeams} style={{ marginTop: 10 }}>
+            <ConfirmButton className="btn ghost sm" message={`¿Crear un código (marcado como usado) para cada uno de los ${teamsSinCodigo} equipos que no tienen? Sirve para los equipos inscritos a mano.`}>Asignar código a los {teamsSinCodigo} equipo(s) sin código</ConfirmButton>
+          </form>
+        )}
       </section>
 
       <section id="cuadro" className="panel pad" style={{ scrollMarginTop: 90 }}>

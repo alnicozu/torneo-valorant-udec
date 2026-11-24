@@ -439,3 +439,29 @@ export async function adminUnpublishSchedule() {
   await q("delete from settings where key='schedule_published'");
   toHorarios('ok', 'Se retiró la programación publicada. Ya no se ve en Calendario.');
 }
+
+// ---------- Códigos: asignar a equipos inscritos a mano y editar notas ----------
+/** Crea un código ya usado para cada equipo que no tiene uno (p. ej. inscritos a mano por WhatsApp). */
+export async function adminAssignCodesToTeams() {
+  await requireAdmin();
+  const teams = await q('select t.id, t.created_at from teams t where not exists (select 1 from reg_codes c where c.team_id = t.id) order by t.created_at, t.id');
+  let n = 0;
+  for (const t of teams) {
+    for (let i = 0; i < 5; i++) {
+      const r = await q(
+        'insert into reg_codes (code, team_id, created_at, used_at) values ($1,$2,$3,$3) on conflict do nothing returning code',
+        [newRegCode(), t.id, t.created_at]
+      );
+      if (r.length) { n++; break; }
+    }
+  }
+  back('ok', n ? `Se asignó un código usado a ${n} equipo(s).` : 'Todos los equipos ya tienen código.', '#codigos');
+}
+
+export async function adminSetCodeNote(fd: FormData) {
+  await requireAdmin();
+  const code = String(fd.get('code') ?? '');
+  const note = String(fd.get('note') ?? '').trim().slice(0, 80) || null;
+  await q('update reg_codes set note=$2 where code=$1', [code, note]);
+  back('ok', 'Nota guardada.', '#codigos');
+}
