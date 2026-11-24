@@ -2,7 +2,7 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from '@/lib/auth';
-import { q } from '@/lib/db';
+import { AJUSTES_CODIGOS, q } from '@/lib/db';
 import { generateBracket, recomputeBracket } from '@/lib/bracket';
 import { getTeams, MAX_ROSTER, MIN_ROSTER, newRegCode, randomCode, RANKS, removeFromTeam, ROLES, setSetting, userPhotoUrl } from '@/lib/data';
 import { createBotPlayer, createBotTeam, randomScores } from '@/lib/sim';
@@ -460,6 +460,7 @@ export async function adminAssignCodesToTeams() {
       if (r.length) { n++; break; }
     }
   }
+  for (const s of AJUSTES_CODIGOS) await q(s);
   back('ok', n ? `Se asignó un código usado a ${n} equipo(s).` : 'Todos los equipos ya tienen código.', '#codigos');
 }
 

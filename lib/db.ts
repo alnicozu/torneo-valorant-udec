@@ -62,9 +62,18 @@ const SCHEMA = [
     key text primary key,
     value text
   )`,
-  // Ajuste puntual: el código de prueba PKAV-7SZN debe ser el más antiguo. No hace nada si ya lo es.
+];
+
+// Ajustes puntuales del orden de los códigos de inscripción (no hacen nada si ya están bien):
+//  1) el código de prueba PKAV-7SZN es el más antiguo;
+//  2) el código del equipo Bulla es el segundo más antiguo (1 s después del de prueba).
+export const AJUSTES_CODIGOS = [
   `update reg_codes set created_at = (select min(created_at) from reg_codes) - interval '1 minute'
    where code = 'PKAV-7SZN' and created_at > (select min(created_at) from reg_codes)`,
+  `update reg_codes set created_at = (select created_at from reg_codes where code = 'PKAV-7SZN') + interval '1 second'
+   where team_id in (select id from teams where lower(name) = 'bulla')
+     and exists (select 1 from reg_codes where code = 'PKAV-7SZN')
+     and created_at is distinct from (select created_at from reg_codes where code = 'PKAV-7SZN') + interval '1 second'`,
 ];
 
 const g = globalThis as any;
@@ -76,6 +85,7 @@ async function init(): Promise<Q> {
     const sql = neon(DB_URL);
     q = (text, params = []) => (sql as any)(text, params) as Promise<any[]>;
     for (const s of SCHEMA) await q(s);
+    for (const s of AJUSTES_CODIGOS) await q(s);
     return q;
   }
   const { PGlite } = await import('@electric-sql/pglite');
