@@ -445,12 +445,17 @@ export async function adminUnpublishSchedule() {
 export async function adminAssignCodesToTeams() {
   await requireAdmin();
   const teams = await q('select t.id, t.created_at from teams t where not exists (select 1 from reg_codes c where c.team_id = t.id) order by t.created_at, t.id');
+  // El código más antiguo que ya existe (p. ej. el de prueba) sigue siendo el más antiguo.
+  const [{ oldest }] = await q('select min(created_at) as oldest from reg_codes');
   let n = 0;
   for (const t of teams) {
+    const teamTime = new Date(t.created_at).getTime();
+    const floor = oldest ? new Date(oldest).getTime() + (n + 1) * 1000 : 0;
+    const when = new Date(Math.max(teamTime, floor)).toISOString();
     for (let i = 0; i < 5; i++) {
       const r = await q(
         'insert into reg_codes (code, team_id, created_at, used_at) values ($1,$2,$3,$3) on conflict do nothing returning code',
-        [newRegCode(), t.id, t.created_at]
+        [newRegCode(), t.id, when]
       );
       if (r.length) { n++; break; }
     }

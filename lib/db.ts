@@ -62,6 +62,9 @@ const SCHEMA = [
     key text primary key,
     value text
   )`,
+  // Ajuste puntual: el código de prueba PKAV-7SZN debe ser el más antiguo. No hace nada si ya lo es.
+  `update reg_codes set created_at = (select min(created_at) from reg_codes) - interval '1 minute'
+   where code = 'PKAV-7SZN' and created_at > (select min(created_at) from reg_codes)`,
 ];
 
 const g = globalThis as any;
